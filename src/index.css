@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors — from intarfaces/DESIGN.md + mockup tailwind.config */
+  --color-on-background: #0b1c30;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-lowest: #ffffff;
+  --color-outline-variant: #c6c6cd;
+  --color-secondary-container: #316bf3;
+  --color-tertiary-container: #002114;
+  --color-surface-tint: #565e74;
+  --color-on-secondary: #ffffff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-error: #ba1a1a;
+  --color-primary: #000000;
+  --color-tertiary: #000000;
+  --color-inverse-surface: #213145;
+  --color-primary-fixed-dim: #bec6e0;
+  --color-surface-bright: #f8f9ff;
+  --color-secondary: #0051d5;
+  --color-secondary-fixed-dim: #b4c5ff;
+  --color-surface-container: #e5eeff;
+  --color-on-primary-container: #7c839b;
+  --color-on-secondary-fixed: #00174b;
+  --color-on-tertiary-fixed-variant: #005137;
+  --color-background: #f8f9ff;
+  --color-secondary-fixed: #dbe1ff;
+  --color-tertiary-fixed: #85f8c4;
+  --color-outline: #76777d;
+  --color-error-container: #ffdad6;
+  --color-surface-container-low: #eff4ff;
+  --color-primary-fixed: #dae2fd;
+  --color-surface-variant: #d3e4fe;
+  --color-on-primary-fixed: #131b2e;
+  --color-on-secondary-container: #fefcff;
+  --color-on-error-container: #93000a;
+  --color-on-primary-fixed-variant: #3f465c;
+  --color-on-error: #ffffff;
+  --color-surface: #f8f9ff;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-on-secondary-fixed-variant: #003ea8;
+  --color-primary-container: #131b2e;
+  --color-on-surface-variant: #45464d;
+  --color-on-tertiary-container: #069669;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-fixed-dim: #68dba9;
+  --color-on-primary: #ffffff;
+  --color-inverse-primary: #bec6e0;
+  --color-surface-dim: #cbdbf5;
+  --color-on-surface: #0b1c30;
+  --color-surface-container-high: #dce9ff;
+
+  /* Typography — from DESIGN.md */
+  --font-headline-xl: "Space Grotesk", sans-serif;
+  --font-headline-lg: "Space Grotesk", sans-serif;
+  --font-headline-md: "Space Grotesk", sans-serif;
+  --font-label-md: "Space Grotesk", sans-serif;
+  --font-label-sm: "Space Grotesk", sans-serif;
+  --font-body-lg: "IBM Plex Sans", sans-serif;
+  --font-body-md: "IBM Plex Sans", sans-serif;
+  --font-body-sm: "IBM Plex Sans", sans-serif;
+  --font-code-tabular: "IBM Plex Sans", monospace;
+
+  --text-headline-xl: 32px;
+  --text-headline-xl--line-height: 40px;
+  --text-headline-xl--letter-spacing: -0.03em;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 32px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 18px;
+  --text-headline-md--line-height: 24px;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-md--font-weight: 600;
+  --text-body-lg: 15px;
+  --text-body-lg--line-height: 22px;
+  --text-body-md: 13px;
+  --text-body-md--line-height: 18px;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.04em;
+  --text-label-md--font-weight: 600;
+  --text-label-sm: 10px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.06em;
+  --text-label-sm--font-weight: 700;
+  --text-code-tabular: 13px;
+  --text-code-tabular--line-height: 18px;
+  --text-code-tabular--letter-spacing: 0.02em;
+  --text-code-tabular--font-weight: 500;
+
+  /* Spacing — from DESIGN.md */
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 0.75rem;
+  --spacing-space-lg: 1rem;
+  --spacing-space-xl: 1.5rem;
+  --spacing-space-2xl: 2.5rem;
+  --spacing-gutter: 1rem;
+  --spacing-gutter-dense: 0.5rem;
+  --spacing-margin: 1.5rem;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body-md);
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.tabular-nums-code {
+  font-variant-numeric: tabular-nums;
+}
