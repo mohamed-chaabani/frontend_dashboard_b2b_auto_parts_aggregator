@@ -95,6 +95,12 @@ export interface ClientProfile {
   unconfiguredCount: number;
 }
 
+export interface LicenseGenerateResult {
+  ok: boolean;
+  machineId: string;
+  key: string;
+}
+
 export interface Stats {
   total: number;
   active: number;
@@ -212,4 +218,10 @@ export const api = {
 
   deleteError: (id: string) =>
     request<{ ok: boolean }>(`/api/admin/errors/${id}`, { method: 'DELETE' }),
+
+  generateLicense: (machineId: string) =>
+    request<LicenseGenerateResult>('/api/licenses/generate', {
+      method: 'POST',
+      body: JSON.stringify({ machineId }),
+    }),
 };
