@@ -1,6 +1,7 @@
 import { Navigate, Route, HashRouter, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import UsersPage from './pages/UsersPage';
+import ClientProfilePage from './pages/ClientProfilePage';
 import { getToken } from './lib/auth';
 
 const RequireAuth = ({ children }: { children: React.ReactElement }) => {
@@ -18,6 +19,14 @@ export default function App() {
           element={
             <RequireAuth>
               <UsersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/client/:id"
+          element={
+            <RequireAuth>
+              <ClientProfilePage />
             </RequireAuth>
           }
         />

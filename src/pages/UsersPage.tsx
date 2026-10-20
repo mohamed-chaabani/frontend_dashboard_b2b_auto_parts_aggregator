@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   api,
   type Plan,
@@ -7,19 +7,22 @@ import {
   type Stats,
   type User,
   type UserPayload,
-} from '../lib/api';
-import { clearToken } from '../lib/auth';
+} from "../lib/api";
+import { clearToken } from "../lib/auth";
 
 const PLAN_CHIP: Record<PlanId, string> = {
-  tester: 'bg-surface-container text-on-surface-variant border-outline-variant',
-  starter: 'bg-secondary-fixed text-on-secondary-fixed border-secondary-fixed-dim',
-  pro: 'bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim',
-  enterprise: 'bg-primary-container text-surface-lowest border-primary-container',
+  tester: "bg-surface-container text-on-surface-variant border-outline-variant",
+  starter:
+    "bg-secondary-fixed text-on-secondary-fixed border-secondary-fixed-dim",
+  pro: "bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim",
+  enterprise:
+    "bg-primary-container text-surface-lowest border-primary-container",
 };
 
 const STATUS_CHIP: Record<string, string> = {
-  active: 'bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim',
-  expired: 'bg-error-container text-on-error-container border-error',
+  active:
+    "bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim",
+  expired: "bg-error-container text-on-error-container border-error",
 };
 
 interface FormState {
@@ -32,21 +35,21 @@ interface FormState {
   resetPassword: boolean;
 }
 
-const emptyForm = (plan: PlanId = 'starter'): FormState => ({
-  name: '',
-  username: '',
-  phone: '',
-  company: '',
+const emptyForm = (plan: PlanId = "starter"): FormState => ({
+  name: "",
+  username: "",
+  phone: "",
+  company: "",
   plan,
-  password: '',
+  password: "",
   resetPassword: false,
 });
 
 const formatDate = (iso: string): string => {
-  if (!iso) return '—';
+  if (!iso) return "—";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('fr-FR');
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-FR");
 };
 
 export default function UsersPage() {
@@ -54,10 +57,13 @@ export default function UsersPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [users, setUsers] = useState<User[] | null>(null);
-  const [q, setQ] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [planFilter, setPlanFilter] = useState('');
-  const [drawer, setDrawer] = useState<{ mode: 'new' | 'edit'; user?: User } | null>(null);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [drawer, setDrawer] = useState<{
+    mode: "new" | "edit";
+    user?: User;
+  } | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +85,7 @@ export default function UsersPage() {
       setPlans(p.plans);
       setUsers(u.users);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Chargement impossible');
+      setError(err instanceof Error ? err.message : "Chargement impossible");
     }
   }, [statusFilter, planFilter, q]);
 
@@ -97,15 +103,15 @@ export default function UsersPage() {
 
   const logout = () => {
     clearToken();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const openNew = () => {
-    const plan = planMap.get('starter') ?? plans[0] ?? null;
-    const next = emptyForm(plan ? plan.id : 'starter');
+    const plan = planMap.get("starter") ?? plans[0] ?? null;
+    const next = emptyForm(plan ? plan.id : "starter");
     setForm(next);
     setError(null);
-    setDrawer({ mode: 'new' });
+    setDrawer({ mode: "new" });
   };
 
   const openEdit = (u: User) => {
@@ -115,11 +121,11 @@ export default function UsersPage() {
       phone: u.phone,
       company: u.company,
       plan: u.plan,
-      password: '',
+      password: "",
       resetPassword: false,
     });
     setError(null);
-    setDrawer({ mode: 'edit', user: u });
+    setDrawer({ mode: "edit", user: u });
   };
 
   const onPlanChange = (planId: PlanId) => {
@@ -135,15 +141,15 @@ export default function UsersPage() {
     setError(null);
 
     if (!form.name.trim() || !form.username.trim() || !form.phone.trim()) {
-      setError('Nom, username et telephone sont obligatoires');
+      setError("Nom, username et telephone sont obligatoires");
       return;
     }
-    if (drawer.mode === 'new' && !form.password) {
-      setError('Mot de passe obligatoire');
+    if (drawer.mode === "new" && !form.password) {
+      setError("Mot de passe obligatoire");
       return;
     }
-    if (drawer.mode === 'edit' && form.resetPassword && !form.password) {
-      setError('Nouveau mot de passe obligatoire');
+    if (drawer.mode === "edit" && form.resetPassword && !form.password) {
+      setError("Nouveau mot de passe obligatoire");
       return;
     }
 
@@ -154,20 +160,22 @@ export default function UsersPage() {
       company: form.company.trim(),
       plan: form.plan,
     };
-    if (drawer.mode === 'new') payload.password = form.password;
-    if (drawer.mode === 'edit' && form.resetPassword) {
+    if (drawer.mode === "new") payload.password = form.password;
+    if (drawer.mode === "edit" && form.resetPassword) {
       payload.resetPassword = true;
       payload.password = form.password;
     }
 
     setSaving(true);
     try {
-      if (drawer.mode === 'new') await api.createUser(payload);
+      if (drawer.mode === "new") await api.createUser(payload);
       else await api.updateUser(drawer.user!.id, payload);
       setDrawer(null);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Enregistrement impossible');
+      setError(
+        err instanceof Error ? err.message : "Enregistrement impossible",
+      );
     } finally {
       setSaving(false);
     }
@@ -179,18 +187,30 @@ export default function UsersPage() {
       await api.deleteUser(u.id);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Suppression impossible');
+      setError(err instanceof Error ? err.message : "Suppression impossible");
     }
   };
 
   const kpis = [
-    { label: 'Total abonnes', value: stats ? String(stats.total) : '—', icon: 'group' },
-    { label: 'Actifs', value: stats ? String(stats.active) : '—', icon: 'verified' },
-    { label: 'Expires', value: stats ? String(stats.expired) : '—', icon: 'timer_off' },
     {
-      label: 'Revenu estime (DT)',
-      value: stats ? String(stats.revenueEstimated) : '—',
-      icon: 'payments',
+      label: "Total abonnes",
+      value: stats ? String(stats.total) : "—",
+      icon: "group",
+    },
+    {
+      label: "Actifs",
+      value: stats ? String(stats.active) : "—",
+      icon: "verified",
+    },
+    {
+      label: "Expires",
+      value: stats ? String(stats.expired) : "—",
+      icon: "timer_off",
+    },
+    {
+      label: "Revenu estime (DT)",
+      value: stats ? String(stats.revenueEstimated) : "—",
+      icon: "payments",
     },
   ];
 
@@ -212,7 +232,9 @@ export default function UsersPage() {
             onClick={logout}
             className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
           >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <span className="material-symbols-outlined text-[16px]">
+              logout
+            </span>
             Deconnexion
           </button>
         </div>
@@ -222,7 +244,11 @@ export default function UsersPage() {
         {error ? (
           <div className="p-space-sm bg-error-container text-on-error-container font-body-sm text-body-sm border border-error flex items-center justify-between">
             <span>{error}</span>
-            <button type="button" onClick={() => setError(null)} className="material-symbols-outlined">
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="material-symbols-outlined"
+            >
               close
             </button>
           </div>
@@ -289,7 +315,9 @@ export default function UsersPage() {
             onClick={openNew}
             className="flex items-center justify-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary shadow-sm transition-all"
           >
-            <span className="material-symbols-outlined text-[16px] text-secondary">add_circle</span>
+            <span className="material-symbols-outlined text-[16px] text-secondary">
+              add_circle
+            </span>
             Ajouter un utilisateur
           </button>
         </div>
@@ -298,13 +326,15 @@ export default function UsersPage() {
         <div className="flex flex-col bg-surface-container-lowest border border-outline-variant shadow-sm">
           <div className="p-space-md bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
             <div className="flex items-center gap-space-sm">
-              <span className="material-symbols-outlined text-[18px] text-on-surface">group</span>
+              <span className="material-symbols-outlined text-[18px] text-on-surface">
+                group
+              </span>
               <span className="font-headline-md text-headline-md uppercase tracking-tight text-on-surface">
                 Souscripteurs
               </span>
             </div>
             <span className="font-body-sm text-body-sm text-outline tabular-nums-code">
-              {users ? `${users.length} resultat(s)` : 'Chargement...'}
+              {users ? `${users.length} resultat(s)` : "Chargement..."}
             </span>
           </div>
 
@@ -314,8 +344,8 @@ export default function UsersPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="p-space-xl font-body-sm text-body-sm text-outline text-center">
-              Aucun utilisateur — cliquez sur "Ajouter un utilisateur" pour creer le premier
-              compte.
+              Aucun utilisateur — cliquez sur "Ajouter un utilisateur" pour
+              creer le premier compte.
             </div>
           ) : (
             <>
@@ -324,16 +354,23 @@ export default function UsersPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-outline-variant">
-                      {['Utilisateur', 'Societe', 'Plan', 'Statut', 'Expiration', 'Actions'].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="px-space-md py-space-sm font-label-sm text-label-sm uppercase text-outline"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
+                      {[
+                        "Utilisateur",
+                        "Societe",
+                        "Plan",
+                        "Statut",
+                        "Expiration",
+                        "Erreurs",
+                        "Non configure",
+                        "Actions",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="px-space-md py-space-sm font-label-sm text-label-sm uppercase text-outline"
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -341,7 +378,7 @@ export default function UsersPage() {
                       <tr
                         key={u.id}
                         className="border-b border-outline-variant hover:bg-surface-container-low/40 transition-colors cursor-pointer"
-                        onClick={() => openEdit(u)}
+                        // onClick={() => openEdit(u)}
                       >
                         <td className="px-space-md py-space-sm">
                           <div className="flex flex-col">
@@ -354,7 +391,7 @@ export default function UsersPage() {
                           </div>
                         </td>
                         <td className="px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant">
-                          {u.company || '—'}
+                          {u.company || "—"}
                         </td>
                         <td className="px-space-md py-space-sm">
                           <span
@@ -367,21 +404,60 @@ export default function UsersPage() {
                           <span
                             className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase ${STATUS_CHIP[u.status]}`}
                           >
-                            {u.status === 'active' ? 'Actif' : 'Expire'}
+                            {u.status === "active" ? "Actif" : "Expire"}
                           </span>
                         </td>
                         <td className="px-space-md py-space-sm font-code-tabular text-body-sm text-on-surface-variant tabular-nums-code">
                           {formatDate(u.expiryDate)}
                         </td>
                         <td className="px-space-md py-space-sm">
-                          <div className="flex items-center gap-space-xs" onClick={(e) => e.stopPropagation()}>
+                          <span
+                            className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase tabular-nums-code ${
+                              u.errorCount
+                                ? "bg-error-container text-on-error-container border-error"
+                                : "bg-surface-container text-on-surface-variant border-outline-variant"
+                            }`}
+                            title="Nombre d'erreurs signalees par ce client"
+                          >
+                            {u.errorCount ?? 0}
+                          </span>
+                        </td>
+                        <td className="px-space-md py-space-sm">
+                          <span
+                            className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase tabular-nums-code ${
+                              u.unconfiguredCount
+                                ? "bg-warning-container text-on-warning-container border-warning"
+                                : "bg-surface-container text-on-surface-variant border-outline-variant"
+                            }`}
+                            title="Fournisseurs non configures (login seul, recherche absente)"
+                          >
+                            {u.unconfiguredCount ?? 0}
+                          </span>
+                        </td>
+                        <td className="px-space-md py-space-sm">
+                          <div
+                            className="flex items-center gap-space-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              title="Profil client"
+                              onClick={() => navigate(`/client/${u.id}`)}
+                              className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                visibility
+                              </span>
+                            </button>
                             <button
                               type="button"
                               title="Modifier"
                               onClick={() => openEdit(u)}
                               className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
                             >
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                              <span className="material-symbols-outlined text-[18px]">
+                                edit
+                              </span>
                             </button>
                             <button
                               type="button"
@@ -389,7 +465,9 @@ export default function UsersPage() {
                               onClick={() => void remove(u)}
                               className="p-1 hover:bg-error-container text-on-surface-variant hover:text-error"
                             >
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                              <span className="material-symbols-outlined text-[18px]">
+                                delete
+                              </span>
                             </button>
                           </div>
                         </td>
@@ -405,7 +483,7 @@ export default function UsersPage() {
                   <div
                     key={u.id}
                     className="p-space-md border-b border-outline-variant flex flex-col gap-space-sm cursor-pointer"
-                    onClick={() => openEdit(u)}
+                    // onClick={() => openEdit(u)}
                   >
                     <div className="flex items-center justify-between gap-space-sm">
                       <span className="font-body-md text-body-md font-semibold text-on-surface">
@@ -414,7 +492,7 @@ export default function UsersPage() {
                       <span
                         className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase ${STATUS_CHIP[u.status]}`}
                       >
-                        {u.status === 'active' ? 'Actif' : 'Expire'}
+                        {u.status === "active" ? "Actif" : "Expire"}
                       </span>
                     </div>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
@@ -430,6 +508,63 @@ export default function UsersPage() {
                         {formatDate(u.expiryDate)}
                       </span>
                     </div>
+                    <div
+                      className="flex items-center justify-between"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center gap-space-xs">
+                        <span
+                          className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase tabular-nums-code ${
+                            u.errorCount
+                              ? "bg-error-container text-on-error-container border-error"
+                              : "bg-surface-container text-on-surface-variant border-outline-variant"
+                          }`}
+                        >
+                          {u.errorCount ?? 0} erreur(s)
+                        </span>
+                        <span
+                          className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase tabular-nums-code ${
+                            u.unconfiguredCount
+                              ? "bg-warning-container text-on-warning-container border-warning"
+                              : "bg-surface-container text-on-surface-variant border-outline-variant"
+                          }`}
+                        >
+                          {u.unconfiguredCount ?? 0} non configure(s)
+                        </span>
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          title="Profil client"
+                          onClick={() => navigate(`/client/${u.id}`)}
+                          className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            visibility
+                          </span>
+                        </button>{" "}
+                        <button
+                          type="button"
+                          title="Modifier"
+                          onClick={() => openEdit(u)}
+                          className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            edit
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          title="Supprimer"
+                          onClick={() => void remove(u)}
+                          className="p-1 hover:bg-error-container text-on-surface-variant hover:text-error"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            delete
+                          </span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -440,7 +575,9 @@ export default function UsersPage() {
         {/* Plans section */}
         <div className="flex flex-col bg-surface-container-lowest border border-outline-variant shadow-sm">
           <div className="p-space-md bg-surface-container-low border-b border-outline-variant flex items-center gap-space-sm">
-            <span className="material-symbols-outlined text-[18px] text-on-surface">sell</span>
+            <span className="material-symbols-outlined text-[18px] text-on-surface">
+              sell
+            </span>
             <span className="font-headline-md text-headline-md uppercase tracking-tight text-on-surface">
               Tarifs des abonnements
             </span>
@@ -450,8 +587,10 @@ export default function UsersPage() {
               <div
                 key={p.id}
                 className={`p-space-md flex flex-col gap-space-xs ${
-                  i > 0 ? 'border-t sm:border-t-0 sm:border-l border-outline-variant' : ''
-                } ${i === 1 ? 'sm:border-t-0' : ''} ${i === 2 ? 'sm:border-t xl:border-t-0' : ''} ${i === 3 ? 'sm:border-t xl:border-t-0' : ''}`}
+                  i > 0
+                    ? "border-t sm:border-t-0 sm:border-l border-outline-variant"
+                    : ""
+                } ${i === 1 ? "sm:border-t-0" : ""} ${i === 2 ? "sm:border-t xl:border-t-0" : ""} ${i === 3 ? "sm:border-t xl:border-t-0" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-headline-md text-headline-md text-on-surface">
@@ -487,10 +626,14 @@ export default function UsersPage() {
             <div className="p-space-lg border-b border-outline-variant bg-surface-container-low flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm uppercase text-outline">
-                  {drawer.mode === 'new' ? 'NOUVEL UTILISATEUR' : 'MODIFIER UTILISATEUR'}
+                  {drawer.mode === "new"
+                    ? "NOUVEL UTILISATEUR"
+                    : "MODIFIER UTILISATEUR"}
                 </span>
                 <h2 className="font-headline-lg text-headline-lg uppercase text-on-surface">
-                  {drawer.mode === 'new' ? 'Ajouter un abonne' : drawer.user!.name}
+                  {drawer.mode === "new"
+                    ? "Ajouter un abonne"
+                    : drawer.user!.name}
                 </h2>
               </div>
               <button
@@ -499,14 +642,22 @@ export default function UsersPage() {
                 onClick={closeDrawer}
                 disabled={saving}
               >
-                <span className="material-symbols-outlined text-[24px]">close</span>
+                <span className="material-symbols-outlined text-[24px]">
+                  close
+                </span>
               </button>
             </div>
 
             <div className="p-space-lg overflow-y-auto flex flex-col gap-space-lg flex-1">
               <div className="p-space-md bg-surface-container-low border border-outline-variant flex flex-col gap-space-xs font-code-tabular text-body-sm text-on-surface-variant">
-                <span>le statut est calcule automatiquement a partir de la date d'expiration</span>
-                <span>pour renouveller : repoussez la date — pour bloquer : mettez une date passee</span>
+                <span>
+                  le statut est calcule automatiquement a partir de la date
+                  d'expiration
+                </span>
+                <span>
+                  pour renouveller : repoussez la date — pour bloquer : mettez
+                  une date passee
+                </span>
               </div>
 
               <div className="p-space-md bg-surface-container-low border border-outline-variant flex flex-col gap-space-md">
@@ -532,7 +683,9 @@ export default function UsersPage() {
                     <input
                       className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
                       value={form.username}
-                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, username: e.target.value })
+                      }
                       placeholder="ahmed.garage"
                     />
                     <span className="font-body-sm text-body-sm text-outline">
@@ -546,7 +699,9 @@ export default function UsersPage() {
                     <input
                       className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, phone: e.target.value })
+                      }
                       placeholder="22 123 456"
                     />
                   </label>
@@ -558,7 +713,9 @@ export default function UsersPage() {
                   <input
                     className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
                     value={form.company}
-                    onChange={(e) => setForm({ ...form, company: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, company: e.target.value })
+                    }
                     placeholder="Garage El Manar"
                   />
                 </label>
@@ -569,7 +726,9 @@ export default function UsersPage() {
                   Abonnement
                 </span>
                 <label className="flex flex-col gap-space-xs">
-                  <span className="font-label-sm text-label-sm uppercase text-outline">Plan *</span>
+                  <span className="font-label-sm text-label-sm uppercase text-outline">
+                    Plan *
+                  </span>
                   <select
                     className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
                     value={form.plan}
@@ -588,32 +747,41 @@ export default function UsersPage() {
                 <span className="font-label-sm text-label-sm uppercase text-secondary font-bold">
                   Mot de passe
                 </span>
-                {drawer.mode === 'edit' ? (
+                {drawer.mode === "edit" ? (
                   <label className="flex items-center gap-space-sm font-body-sm text-body-sm text-on-surface-variant">
                     <input
                       type="checkbox"
                       checked={form.resetPassword}
                       onChange={(e) =>
-                        setForm({ ...form, resetPassword: e.target.checked, password: '' })
+                        setForm({
+                          ...form,
+                          resetPassword: e.target.checked,
+                          password: "",
+                        })
                       }
                     />
                     Reinitialiser le mot de passe
                   </label>
                 ) : null}
-                {drawer.mode === 'new' || form.resetPassword ? (
+                {drawer.mode === "new" || form.resetPassword ? (
                   <label className="flex flex-col gap-space-xs">
                     <span className="font-label-sm text-label-sm uppercase text-outline">
-                      {drawer.mode === 'new' ? 'Mot de passe *' : 'Nouveau mot de passe *'}
+                      {drawer.mode === "new"
+                        ? "Mot de passe *"
+                        : "Nouveau mot de passe *"}
                     </span>
                     <input
                       type="text"
                       className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
                       value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, password: e.target.value })
+                      }
                       placeholder="Str0ng&Pass"
                     />
                     <span className="font-body-sm text-body-sm text-outline">
-                      8+ caracteres, majuscule, minuscule, chiffre et caractere special
+                      8+ caracteres, majuscule, minuscule, chiffre et caractere
+                      special
                     </span>
                   </label>
                 ) : null}
@@ -641,8 +809,10 @@ export default function UsersPage() {
                 disabled={saving}
                 className="flex items-center gap-space-xs px-space-md py-2 bg-primary-container text-surface-lowest font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">save</span>
-                {saving ? 'Enregistrement...' : 'Enregistrer'}
+                <span className="material-symbols-outlined text-[16px]">
+                  save
+                </span>
+                {saving ? "Enregistrement..." : "Enregistrer"}
               </button>
             </div>
           </div>

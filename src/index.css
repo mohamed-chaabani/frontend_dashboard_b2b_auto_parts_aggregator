@@ -49,6 +49,9 @@
   --color-surface-dim: #cbdbf5;
   --color-on-surface: #0b1c30;
   --color-surface-container-high: #dce9ff;
+  --color-warning: #a06a00;
+  --color-warning-container: #fff3c4;
+  --color-on-warning-container: #5c4400;
 
   /* Typography — from DESIGN.md */
   --font-headline-xl: "Space Grotesk", sans-serif;
