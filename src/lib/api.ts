@@ -20,6 +20,79 @@ export interface User {
   status: 'active' | 'expired';
   createdAt: string;
   updatedAt: string;
+  errorCount?: number;
+  unconfiguredCount?: number;
+}
+
+export type ErrorKind =
+  | 'search'
+  | 'probe'
+  | 'equivalents'
+  | 'capture'
+  | 'login'
+  | 'activation'
+  | 'runtime';
+
+export interface AppErrorItem {
+  id: string;
+  kind: ErrorKind;
+  message: string;
+  clientId: string;
+  machineId: string;
+  user: { name: string; username: string; company: string };
+  appVersion: string;
+  site: { id: string; name: string; baseUrl: string; username: string; password: string };
+  query: string;
+  field: string;
+  hash: string;
+  clientTs: string | null;
+  createdAt: string;
+}
+
+export interface ErrorsPage {
+  errors: AppErrorItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SnapshotSite {
+  id: string;
+  name: string;
+  baseUrl: string;
+  enabled: boolean;
+  deleted: boolean;
+  builtin: boolean;
+  builtinParser: boolean;
+  searchReady: boolean;
+  username: string;
+}
+
+export interface UnconfiguredSite {
+  id: string;
+  name: string;
+  baseUrl: string;
+  username: string;
+}
+
+export interface ClientSnapshot {
+  machineId: string;
+  clientId: string;
+  appVersion: string;
+  sites: SnapshotSite[];
+  unconfigured: UnconfiguredSite[];
+  firstSeen: string;
+  createdAt: string;
+  updatedAt: string;
+  user: { name: string; username: string; company: string };
+}
+
+export interface ClientProfile {
+  clientId: string;
+  user: User | null;
+  snapshots: ClientSnapshot[];
+  errorCount: number;
+  unconfiguredCount: number;
 }
 
 export interface Stats {
@@ -121,4 +194,22 @@ export const api = {
 
   deleteUser: (id: string) =>
     request<{ id: string }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+
+  clientProfile: (id: string) => request<ClientProfile>(`/api/admin/clients/${id}`),
+
+  errors: (
+    params: { clientId?: string; kind?: string; q?: string; page?: number; limit?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (params.clientId) qs.set('clientId', params.clientId);
+    if (params.kind) qs.set('kind', params.kind);
+    if (params.q) qs.set('q', params.q);
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return request<ErrorsPage>(`/api/admin/errors${suffix}`);
+  },
+
+  deleteError: (id: string) =>
+    request<{ ok: boolean }>(`/api/admin/errors/${id}`, { method: 'DELETE' }),
 };
