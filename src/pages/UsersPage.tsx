@@ -68,11 +68,10 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [licUser, setLicUser] = useState<User | null>(null);
+  const [licOpen, setLicOpen] = useState(false);
   const [licMachine, setLicMachine] = useState("");
   const [licKey, setLicKey] = useState("");
   const [licBusy, setLicBusy] = useState(false);
-  const [licLoading, setLicLoading] = useState(false);
   const [licError, setLicError] = useState<string | null>(null);
   const [licCopied, setLicCopied] = useState(false);
 
@@ -199,28 +198,16 @@ export default function UsersPage() {
     }
   };
 
-  const openLicense = async (u: User) => {
-    setLicUser(u);
+  const openLicense = () => {
     setLicMachine("");
     setLicKey("");
     setLicError(null);
     setLicCopied(false);
-    setLicLoading(true);
-    try {
-      const p = await api.clientProfile(u.id);
-      const snaps = [...p.snapshots].sort(
-        (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-      );
-      setLicMachine(snaps[0]?.machineId || "");
-    } catch {
-      // no snapshot yet - the admin types the machine ID manually
-    } finally {
-      setLicLoading(false);
-    }
+    setLicOpen(true);
   };
 
   const closeLicense = () => {
-    if (!licBusy) setLicUser(null);
+    if (!licBusy) setLicOpen(false);
   };
 
   const generateLicense = async () => {
@@ -284,16 +271,28 @@ export default function UsersPage() {
               Dashboard abonnements
             </h1>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              logout
-            </span>
-            Deconnexion
-          </button>
+          <div className="flex items-center gap-space-sm">
+            <button
+              type="button"
+              onClick={openLicense}
+              className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                key
+              </span>
+              Generer licence
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                logout
+              </span>
+              Deconnexion
+            </button>
+          </div>
         </div>
       </div>
 
@@ -508,16 +507,6 @@ export default function UsersPage() {
                             </button>
                             <button
                               type="button"
-                              title="Generer licence"
-                              onClick={() => void openLicense(u)}
-                              className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">
-                                key
-                              </span>
-                            </button>
-                            <button
-                              type="button"
                               title="Modifier"
                               onClick={() => openEdit(u)}
                               className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
@@ -610,16 +599,6 @@ export default function UsersPage() {
                             visibility
                           </span>
                         </button>{" "}
-                        <button
-                          type="button"
-                          title="Generer licence"
-                          onClick={() => void openLicense(u)}
-                          className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">
-                            key
-                          </span>
-                        </button>
                         <button
                           type="button"
                           title="Modifier"
@@ -897,7 +876,7 @@ export default function UsersPage() {
       ) : null}
 
       {/* License generator drawer */}
-      {licUser ? (
+      {licOpen ? (
         <div
           className="fixed inset-0 bg-primary/60 backdrop-blur-sm z-50 flex justify-end transition-opacity"
           onClick={(e) => {
@@ -911,7 +890,7 @@ export default function UsersPage() {
                   LICENCE
                 </span>
                 <h2 className="font-headline-lg text-headline-lg uppercase text-on-surface">
-                  {licUser.name}
+                  Generer une cle
                 </h2>
               </div>
               <button
@@ -954,11 +933,8 @@ export default function UsersPage() {
                   className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-code-tabular text-body-sm text-on-surface focus:border-secondary focus:outline-none"
                 />
                 <span className="font-body-sm text-body-sm text-outline">
-                  {licLoading
-                    ? "Chargement de la derniere synchro..."
-                    : licMachine
-                      ? "Prefilled depuis la derniere synchro - modifiable si besoin."
-                      : "Aucune synchro recue pour ce client - saisissez le Machine ID affiche sur son ecran d activation."}
+                  Saisissez le Machine ID affiche sur l'ecran d'activation de
+                  l'application du client (ou la derniere synchro recue).
                 </span>
               </div>
 
