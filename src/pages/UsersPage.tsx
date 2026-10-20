@@ -68,6 +68,14 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [licUser, setLicUser] = useState<User | null>(null);
+  const [licMachine, setLicMachine] = useState("");
+  const [licKey, setLicKey] = useState("");
+  const [licBusy, setLicBusy] = useState(false);
+  const [licLoading, setLicLoading] = useState(false);
+  const [licError, setLicError] = useState<string | null>(null);
+  const [licCopied, setLicCopied] = useState(false);
+
   const planMap = useMemo(() => {
     const m = new Map<PlanId, Plan>();
     for (const p of plans) m.set(p.id, p);
@@ -188,6 +196,55 @@ export default function UsersPage() {
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Suppression impossible");
+    }
+  };
+
+  const openLicense = async (u: User) => {
+    setLicUser(u);
+    setLicMachine("");
+    setLicKey("");
+    setLicError(null);
+    setLicCopied(false);
+    setLicLoading(true);
+    try {
+      const p = await api.clientProfile(u.id);
+      const snaps = [...p.snapshots].sort(
+        (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+      );
+      setLicMachine(snaps[0]?.machineId || "");
+    } catch {
+      // no snapshot yet - the admin types the machine ID manually
+    } finally {
+      setLicLoading(false);
+    }
+  };
+
+  const closeLicense = () => {
+    if (!licBusy) setLicUser(null);
+  };
+
+  const generateLicense = async () => {
+    setLicBusy(true);
+    setLicError(null);
+    setLicKey("");
+    setLicCopied(false);
+    try {
+      const r = await api.generateLicense(licMachine.trim());
+      setLicKey(r.key);
+    } catch (err) {
+      setLicError(err instanceof Error ? err.message : "Generation impossible");
+    } finally {
+      setLicBusy(false);
+    }
+  };
+
+  const copyKey = async () => {
+    if (!licKey) return;
+    try {
+      await navigator.clipboard.writeText(licKey);
+      setLicCopied(true);
+    } catch {
+      setLicError("Copie impossible - selectionnez la cle manuellement");
     }
   };
 
@@ -451,6 +508,16 @@ export default function UsersPage() {
                             </button>
                             <button
                               type="button"
+                              title="Generer licence"
+                              onClick={() => void openLicense(u)}
+                              className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                key
+                              </span>
+                            </button>
+                            <button
+                              type="button"
                               title="Modifier"
                               onClick={() => openEdit(u)}
                               className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
@@ -543,6 +610,16 @@ export default function UsersPage() {
                             visibility
                           </span>
                         </button>{" "}
+                        <button
+                          type="button"
+                          title="Generer licence"
+                          onClick={() => void openLicense(u)}
+                          className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            key
+                          </span>
+                        </button>
                         <button
                           type="button"
                           title="Modifier"
@@ -813,6 +890,122 @@ export default function UsersPage() {
                   save
                 </span>
                 {saving ? "Enregistrement..." : "Enregistrer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* License generator drawer */}
+      {licUser ? (
+        <div
+          className="fixed inset-0 bg-primary/60 backdrop-blur-sm z-50 flex justify-end transition-opacity"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeLicense();
+          }}
+        >
+          <div className="w-full max-w-xl bg-surface-container-lowest h-full border-l-2 border-primary flex flex-col shadow-2xl">
+            <div className="p-space-lg border-b border-outline-variant bg-surface-container-low flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="font-label-sm text-label-sm uppercase text-outline">
+                  LICENCE
+                </span>
+                <h2 className="font-headline-lg text-headline-lg uppercase text-on-surface">
+                  {licUser.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="p-1 hover:bg-surface-container text-on-surface disabled:opacity-50"
+                onClick={closeLicense}
+                disabled={licBusy}
+              >
+                <span className="material-symbols-outlined text-[24px]">
+                  close
+                </span>
+              </button>
+            </div>
+
+            <div className="p-space-lg overflow-y-auto flex flex-col gap-space-lg flex-1">
+              <div className="p-space-md bg-surface-container-low border border-outline-variant font-body-sm text-body-sm text-on-surface-variant">
+                La cle est signee pour le Machine ID de ce poste uniquement (une
+                cle par PC). Le client la saisit dans la page d'activation de
+                l'application.
+              </div>
+
+              {licError ? (
+                <div className="p-space-sm bg-error-container text-on-error-container font-body-sm text-body-sm border border-error">
+                  {licError}
+                </div>
+              ) : null}
+
+              <div className="flex flex-col gap-space-sm">
+                <label
+                  htmlFor="lic-machine"
+                  className="font-label-sm text-label-sm uppercase text-secondary font-bold"
+                >
+                  Machine ID
+                </label>
+                <input
+                  id="lic-machine"
+                  value={licMachine}
+                  onChange={(e) => setLicMachine(e.target.value)}
+                  placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                  className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-code-tabular text-body-sm text-on-surface focus:border-secondary focus:outline-none"
+                />
+                <span className="font-body-sm text-body-sm text-outline">
+                  {licLoading
+                    ? "Chargement de la derniere synchro..."
+                    : licMachine
+                      ? "Prefilled depuis la derniere synchro - modifiable si besoin."
+                      : "Aucune synchro recue pour ce client - saisissez le Machine ID affiche sur son ecran d activation."}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-space-sm">
+                <button
+                  type="button"
+                  onClick={() => void generateLicense()}
+                  disabled={licBusy || !licMachine.trim()}
+                  className="flex items-center gap-space-xs px-space-md py-2 bg-secondary text-on-secondary font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    key
+                  </span>
+                  {licBusy ? "Generation..." : "Generer"}
+                </button>
+              </div>
+
+              {licKey ? (
+                <div className="flex flex-col gap-space-sm">
+                  <span className="font-label-sm text-label-sm uppercase text-secondary font-bold">
+                    Cle generee
+                  </span>
+                  <div className="p-space-md bg-surface-container-low border border-outline-variant font-code-tabular text-body-sm text-on-surface break-all select-all">
+                    {licKey}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void copyKey()}
+                    className="self-start flex items-center gap-space-xs px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {licCopied ? "check" : "content_copy"}
+                    </span>
+                    {licCopied ? "Copiee" : "Copier"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="p-space-lg border-t border-outline-variant flex items-center justify-end bg-surface-container-low">
+              <button
+                type="button"
+                onClick={closeLicense}
+                disabled={licBusy}
+                className="px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
+              >
+                Fermer
               </button>
             </div>
           </div>
