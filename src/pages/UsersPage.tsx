@@ -275,11 +275,9 @@ export default function UsersPage() {
             <button
               type="button"
               onClick={openLicense}
-              className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
+              className="flex items-center gap-space-xs px-space-md py-2 bg-secondary text-on-secondary font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                key
-              </span>
+              <span className="material-symbols-outlined text-[16px]">key</span>
               Generer licence
             </button>
             <button
