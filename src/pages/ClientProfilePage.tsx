@@ -1,44 +1,44 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   api,
   type AppErrorItem,
   type ClientProfile,
   type ErrorKind,
-} from '../lib/api';
-import { clearToken } from '../lib/auth';
+} from "../lib/api";
+import { clearToken } from "../lib/auth";
 
 const KIND_LABEL: Record<ErrorKind, string> = {
-  search: 'Recherche',
-  probe: 'Test connexion',
-  equivalents: 'Equivalents',
-  capture: 'Capture session',
-  login: 'Connexion app',
-  activation: 'Activation',
-  runtime: 'Erreur technique',
+  search: "Recherche",
+  probe: "Test connexion",
+  equivalents: "Equivalents",
+  capture: "Capture session",
+  login: "Connexion app",
+  activation: "Activation",
+  runtime: "Erreur technique",
 };
 
 const KIND_OPTIONS: ErrorKind[] = [
-  'search',
-  'probe',
-  'equivalents',
-  'capture',
-  'login',
-  'activation',
-  'runtime',
+  "search",
+  "probe",
+  "equivalents",
+  "capture",
+  "login",
+  "activation",
+  "runtime",
 ];
 
 const LIMIT = 20;
 
 const formatDateTime = (iso: string): string => {
-  if (!iso) return '—';
+  if (!iso) return "—";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleString('fr-FR');
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("fr-FR");
 };
 
 const shortMachine = (machineId: string): string =>
-  machineId ? `${machineId.slice(0, 12)}…${machineId.slice(-4)}` : '—';
+  machineId ? `${machineId.slice(0, 12)}…${machineId.slice(-4)}` : "—";
 
 export default function ClientProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -50,9 +50,9 @@ export default function ClientProfilePage() {
   const [errors, setErrors] = useState<AppErrorItem[] | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [kind, setKind] = useState('');
-  const [q, setQ] = useState('');
-  const [qDeb, setQDeb] = useState('');
+  const [kind, setKind] = useState("");
+  const [q, setQ] = useState("");
+  const [qDeb, setQDeb] = useState("");
 
   const [detail, setDetail] = useState<AppErrorItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -60,8 +60,12 @@ export default function ClientProfilePage() {
 
   const logout = () => {
     clearToken();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   };
+
+  useEffect(() => {
+    console.log("profile", profile);
+  }, [profile]);
 
   const loadProfile = useCallback(() => {
     if (!id) return;
@@ -69,7 +73,9 @@ export default function ClientProfilePage() {
       .clientProfile(id)
       .then((p) => setProfile(p))
       .catch((err) =>
-        setProfileError(err instanceof Error ? err.message : 'Chargement impossible'),
+        setProfileError(
+          err instanceof Error ? err.message : "Chargement impossible",
+        ),
       );
   }, [id]);
 
@@ -97,7 +103,9 @@ export default function ClientProfilePage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setActionError(err instanceof Error ? err.message : 'Chargement impossible');
+        setActionError(
+          err instanceof Error ? err.message : "Chargement impossible",
+        );
       });
     return () => {
       cancelled = true;
@@ -105,20 +113,28 @@ export default function ClientProfilePage() {
   }, [id, page, kind, qDeb]);
 
   const remove = async (item: AppErrorItem) => {
-    if (!window.confirm('Supprimer cette erreur ?')) return;
+    if (!window.confirm("Supprimer cette erreur ?")) return;
     setDeleting(true);
     setActionError(null);
     try {
       await api.deleteError(item.id);
       if (detail?.id === item.id) setDetail(null);
       loadProfile();
-      const r = await api.errors({ clientId: id, page, kind, q: qDeb, limit: LIMIT });
+      const r = await api.errors({
+        clientId: id,
+        page,
+        kind,
+        q: qDeb,
+        limit: LIMIT,
+      });
       setErrors(r.errors);
       setTotal(r.total);
       const pages = Math.max(1, Math.ceil(r.total / LIMIT));
       if (page > pages) setPage(pages);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Suppression impossible');
+      setActionError(
+        err instanceof Error ? err.message : "Suppression impossible",
+      );
     } finally {
       setDeleting(false);
     }
@@ -134,29 +150,32 @@ export default function ClientProfilePage() {
 
   const kpis = [
     {
-      label: 'NB erreurs',
-      value: profile ? String(profile.errorCount) : '—',
-      icon: 'error',
-      accent: profile && profile.errorCount > 0 ? 'text-error' : 'text-on-surface',
-    },
-    {
-      label: 'Non configure',
-      value: profile ? String(profile.unconfiguredCount) : '—',
-      icon: 'settings_alert',
+      label: "NB erreurs",
+      value: profile ? String(profile.errorCount) : "—",
+      icon: "error",
       accent:
-        profile && profile.unconfiguredCount > 0 ? 'text-warning' : 'text-on-surface',
+        profile && profile.errorCount > 0 ? "text-error" : "text-on-surface",
     },
     {
-      label: 'Sites (derniere synchro)',
-      value: latest ? String(latest.sites.length) : '—',
-      icon: 'domain',
-      accent: 'text-on-surface',
+      label: "Non configure",
+      value: profile ? String(profile.unconfiguredCount) : "—",
+      icon: "settings_alert",
+      accent:
+        profile && profile.unconfiguredCount > 0
+          ? "text-warning"
+          : "text-on-surface",
     },
     {
-      label: 'Derniere synchro',
-      value: latest ? formatDateTime(latest.updatedAt) : '—',
-      icon: 'sync',
-      accent: 'text-on-surface',
+      label: "Sites (derniere synchro)",
+      value: latest ? String(latest.sites.length) : "—",
+      icon: "domain",
+      accent: "text-on-surface",
+    },
+    {
+      label: "Derniere synchro",
+      value: latest ? formatDateTime(latest.updatedAt) : "—",
+      icon: "sync",
+      accent: "text-on-surface",
     },
   ];
 
@@ -168,11 +187,13 @@ export default function ClientProfilePage() {
           <div className="flex items-center gap-space-sm">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               title="Retour aux souscripteurs"
               className="p-1 hover:bg-surface-container text-on-surface-variant hover:text-secondary"
             >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[24px]">
+                arrow_back
+              </span>
             </button>
             <div className="flex flex-col">
               <span className="font-label-sm text-label-sm uppercase text-secondary">
@@ -190,7 +211,7 @@ export default function ClientProfilePage() {
                   {profile.user.name}
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  @{profile.user.username} · {profile.user.company || '—'}
+                  @{profile.user.username} · {profile.user.company || "—"}
                 </span>
               </span>
             ) : null}
@@ -199,7 +220,9 @@ export default function ClientProfilePage() {
               onClick={logout}
               className="flex items-center gap-space-xs px-space-md py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md uppercase tracking-wider border border-outline-variant hover:border-secondary hover:text-secondary transition-all"
             >
-              <span className="material-symbols-outlined text-[16px]">logout</span>
+              <span className="material-symbols-outlined text-[16px]">
+                logout
+              </span>
               Deconnexion
             </button>
           </div>
@@ -262,16 +285,16 @@ export default function ClientProfilePage() {
           {latest ? (
             <>
               <span>machine : {shortMachine(latest.machineId)}</span>
-              <span>version app : {latest.appVersion || '—'}</span>
+              <span>version app : {latest.appVersion || "—"}</span>
               <span>
-                premier signal : {formatDateTime(latest.firstSeen)} · derniere maj :{' '}
-                {formatDateTime(latest.updatedAt)}
+                premier signal : {formatDateTime(latest.firstSeen)} · derniere
+                maj : {formatDateTime(latest.updatedAt)}
               </span>
             </>
           ) : (
             <span>
-              aucune synchro recue — le client n'a pas encore lance l'application depuis la
-              mise en place du telemetry
+              aucune synchro recue — le client n'a pas encore lance
+              l'application depuis la mise en place du telemetry
             </span>
           )}
         </div>
@@ -286,15 +309,15 @@ export default function ClientProfilePage() {
               Fournisseurs non configure(s)
             </span>
             <span className="ml-auto font-body-sm text-body-sm text-outline tabular-nums-code">
-              {profile ? `${profile.unconfiguredCount} au total` : '—'}
+              {profile ? `${profile.unconfiguredCount} au total` : "—"}
             </span>
           </div>
 
           {!profile || profile.unconfiguredCount === 0 ? (
             <div className="p-space-xl font-body-sm text-body-sm text-outline text-center">
               {profile
-                ? 'Aucun fournisseur non configure — tous les sites actifs ont la recherche pleinement configuree.'
-                : 'Chargement...'}
+                ? "Aucun fournisseur non configure — tous les sites actifs ont la recherche pleinement configuree."
+                : "Chargement..."}
             </div>
           ) : (
             <div className="p-space-md flex flex-col gap-space-md">
@@ -323,16 +346,18 @@ export default function ClientProfilePage() {
                             {site.name}
                           </span>
                           <span className="font-code-tabular text-body-sm text-on-surface-variant flex-1 break-all">
-                            {site.baseUrl || '—'}
+                            {site.baseUrl || "—"}
                           </span>
                           <span
                             className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase self-start sm:self-auto ${
                               site.username
-                                ? 'bg-surface-container text-on-surface-variant border-outline-variant'
-                                : 'bg-error-container text-on-error-container border-error'
+                                ? "bg-surface-container text-on-surface-variant border-outline-variant"
+                                : "bg-error-container text-on-error-container border-error"
                             }`}
                           >
-                            {site.username ? `login : ${site.username}` : 'pas de login'}
+                            {site.username
+                              ? `login : ${site.username}`
+                              : "pas de login"}
                           </span>
                           <span className="px-space-sm py-0.5 border border-warning bg-warning-container font-label-sm text-label-sm uppercase text-on-warning-container self-start sm:self-auto">
                             recherche absente
@@ -359,7 +384,7 @@ export default function ClientProfilePage() {
             </div>
             <span className="font-body-sm text-body-sm text-outline tabular-nums-code">
               {errors === null
-                ? 'Chargement...'
+                ? "Chargement..."
                 : `${total} resultat(s) · page ${page}/${totalPages}`}
             </span>
           </div>
@@ -410,7 +435,13 @@ export default function ClientProfilePage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-outline-variant">
-                      {['Date', 'Type', 'Fournisseur', 'Requete', 'Message'].map((h) => (
+                      {[
+                        "Date",
+                        "Type",
+                        "Fournisseur",
+                        "Requete",
+                        "Message",
+                      ].map((h) => (
                         <th
                           key={h}
                           className="px-space-md py-space-sm font-label-sm text-label-sm uppercase text-outline"
@@ -439,7 +470,7 @@ export default function ClientProfilePage() {
                           </span>
                         </td>
                         <td className="px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant">
-                          {e.site.name || '—'}
+                          {e.site.name || "—"}
                         </td>
                         <td className="px-space-md py-space-sm font-code-tabular text-body-sm text-on-surface-variant">
                           {e.query ? (
@@ -447,7 +478,7 @@ export default function ClientProfilePage() {
                               {e.field} : {e.query}
                             </span>
                           ) : (
-                            '—'
+                            "—"
                           )}
                         </td>
                         <td
@@ -507,8 +538,8 @@ export default function ClientProfilePage() {
                       </span>
                     </div>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
-                      {e.site.name || '—'}
-                      {e.query ? ` · ${e.field} : ${e.query}` : ''}
+                      {e.site.name || "—"}
+                      {e.query ? ` · ${e.field} : ${e.query}` : ""}
                     </span>
                     <span className="font-body-sm text-body-sm text-on-surface">
                       {e.message}
@@ -524,7 +555,9 @@ export default function ClientProfilePage() {
                         onClick={() => void remove(e)}
                         className="p-1 hover:bg-error-container text-on-surface-variant hover:text-error disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <span className="material-symbols-outlined text-[18px]">
+                          delete
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -584,16 +617,22 @@ export default function ClientProfilePage() {
                 onClick={() => setDetail(null)}
                 disabled={deleting}
               >
-                <span className="material-symbols-outlined text-[24px]">close</span>
+                <span className="material-symbols-outlined text-[24px]">
+                  close
+                </span>
               </button>
             </div>
 
             <div className="p-space-lg overflow-y-auto flex flex-col gap-space-lg flex-1">
               <div className="p-space-md bg-surface-container-low border border-outline-variant flex flex-col gap-space-xs font-code-tabular text-body-sm text-on-surface-variant">
                 <span>recue le {formatDateTime(detail.createdAt)}</span>
-                <span>version app : {detail.appVersion || '—'}</span>
+                <span>version app : {detail.appVersion || "—"}</span>
                 <span>machine : {shortMachine(detail.machineId)}</span>
-                {detail.clientTs ? <span>horloge client : {formatDateTime(detail.clientTs)}</span> : null}
+                {detail.clientTs ? (
+                  <span>
+                    horloge client : {formatDateTime(detail.clientTs)}
+                  </span>
+                ) : null}
                 {detail.hash ? <span>hash : {detail.hash}</span> : null}
               </div>
 
@@ -602,10 +641,12 @@ export default function ClientProfilePage() {
                   Fournisseur concerne
                 </span>
                 <div className="flex flex-col gap-space-xs font-code-tabular text-body-sm text-on-surface-variant">
-                  <span>nom : {detail.site.name || '—'}</span>
-                  <span className="break-all">url : {detail.site.baseUrl || '—'}</span>
-                  <span>login : {detail.site.username || '—'}</span>
-                  <span>mot de passe : {detail.site.password || '—'}</span>
+                  <span>nom : {detail.site.name || "—"}</span>
+                  <span className="break-all">
+                    url : {detail.site.baseUrl || "—"}
+                  </span>
+                  <span>login : {detail.site.username || "—"}</span>
+                  <span>mot de passe : {detail.site.password || "—"}</span>
                 </div>
               </div>
 
@@ -615,7 +656,7 @@ export default function ClientProfilePage() {
                     Requete
                   </span>
                   <span className="font-code-tabular text-body-sm text-on-surface-variant">
-                    champ : {detail.field || '—'}
+                    champ : {detail.field || "—"}
                   </span>
                   <span className="font-code-tabular text-body-sm text-on-surface break-all">
                     valeur : {detail.query}
@@ -648,8 +689,10 @@ export default function ClientProfilePage() {
                 disabled={deleting}
                 className="flex items-center gap-space-xs px-space-md py-2 bg-error text-on-error font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">delete</span>
-                {deleting ? 'Suppression...' : 'Supprimer'}
+                <span className="material-symbols-outlined text-[16px]">
+                  delete
+                </span>
+                {deleting ? "Suppression..." : "Supprimer"}
               </button>
             </div>
           </div>
