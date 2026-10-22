@@ -120,9 +120,7 @@ export interface UserPayload {
   resetPassword?: boolean;
 }
 
-const BASE =
-  import.meta.env.VITE_API_URL ||
-  'https://backend-dashboard-b2b-auto-parts.onrender.com';
+const BASE = 'https://backend-dashboard-b2b-auto-parts.onrender.com';
 
 export class ApiError extends Error {
   status: number;
