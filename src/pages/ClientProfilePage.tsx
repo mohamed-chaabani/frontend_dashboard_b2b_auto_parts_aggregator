@@ -375,8 +375,8 @@ export default function ClientProfilePage() {
           )}
         </div>
 
-        {/* Sites de la machine (derniere synchro) */}
-        {latest && latest.sites.filter((st) => !st.deleted).length > 0 ? (
+        {/* Sites de la machine (derniere synchro, custom cards only) */}
+        {latest && latest.sites.filter((st) => !st.deleted && !st.builtin).length > 0 ? (
           <div className="flex flex-col bg-surface-container-lowest border border-outline-variant shadow-sm">
             <div className="p-space-md bg-surface-container-low border-b border-outline-variant flex items-center gap-space-sm">
               <span className="material-symbols-outlined text-[18px] text-on-surface">
@@ -386,13 +386,14 @@ export default function ClientProfilePage() {
                 Sites de la machine
               </span>
               <span className="ml-auto font-body-sm text-body-sm text-outline tabular-nums-code">
-                {latest.sites.filter((st) => !st.deleted).length} site(s) ·
+                {latest.sites.filter((st) => !st.deleted && !st.builtin).length}{" "}
+                site(s) ·
                 derniere synchro {formatDateTime(latest.updatedAt)}
               </span>
             </div>
             <div className="flex flex-col">
               {latest.sites
-                .filter((st) => !st.deleted)
+                .filter((st) => !st.deleted && !st.builtin)
                 .map((st) => {
                   const isLink = /^https?:\/\//i.test(st.baseUrl || "");
                   const status = !st.enabled
