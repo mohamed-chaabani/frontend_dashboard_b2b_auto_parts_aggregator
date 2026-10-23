@@ -66,6 +66,7 @@ export interface SnapshotSite {
   builtinParser: boolean;
   searchReady: boolean;
   username: string;
+  password: string;
 }
 
 export interface UnconfiguredSite {
@@ -73,6 +74,7 @@ export interface UnconfiguredSite {
   name: string;
   baseUrl: string;
   username: string;
+  password: string;
 }
 
 export interface ClientSnapshot {
