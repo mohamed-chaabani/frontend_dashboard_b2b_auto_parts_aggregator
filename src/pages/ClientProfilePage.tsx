@@ -375,6 +375,87 @@ export default function ClientProfilePage() {
           )}
         </div>
 
+        {/* Sites de la machine (derniere synchro) */}
+        {latest && latest.sites.filter((st) => !st.deleted).length > 0 ? (
+          <div className="flex flex-col bg-surface-container-lowest border border-outline-variant shadow-sm">
+            <div className="p-space-md bg-surface-container-low border-b border-outline-variant flex items-center gap-space-sm">
+              <span className="material-symbols-outlined text-[18px] text-on-surface">
+                hub
+              </span>
+              <span className="font-headline-md text-headline-md uppercase tracking-tight text-on-surface">
+                Sites de la machine
+              </span>
+              <span className="ml-auto font-body-sm text-body-sm text-outline tabular-nums-code">
+                {latest.sites.filter((st) => !st.deleted).length} site(s) ·
+                derniere synchro {formatDateTime(latest.updatedAt)}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              {latest.sites
+                .filter((st) => !st.deleted)
+                .map((st) => {
+                  const isLink = /^https?:\/\//i.test(st.baseUrl || "");
+                  const status = !st.enabled
+                    ? { label: "desactive", cls: "bg-surface-container text-on-surface-variant border-outline-variant" }
+                    : st.builtin
+                      ? { label: "built-in engine", cls: "bg-secondary-container text-on-secondary-container border-secondary" }
+                      : st.searchReady
+                        ? { label: "prete", cls: "bg-tertiary-fixed text-on-tertiary-fixed-variant border-tertiary-fixed-dim" }
+                        : { label: "connexion seule", cls: "bg-warning-container text-on-warning-container border-warning" };
+                  return (
+                    <div
+                      key={st.id || st.name}
+                      className="px-space-md py-space-sm border-b border-outline-variant/50 last:border-b-0 flex flex-col sm:flex-row sm:items-center gap-space-xs sm:gap-space-md"
+                    >
+                      <span className="font-body-md text-body-md font-semibold text-on-surface min-w-40">
+                        {st.name || st.id}
+                      </span>
+                      <span className="font-code-tabular text-body-sm text-on-surface-variant flex-1 break-all">
+                        {isLink ? (
+                          <a
+                            href={st.baseUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline decoration-dotted hover:text-secondary"
+                          >
+                            {st.baseUrl}
+                          </a>
+                        ) : (
+                          st.baseUrl || "—"
+                        )}
+                      </span>
+                      <span
+                        className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase self-start sm:self-auto ${
+                          st.username
+                            ? "bg-surface-container text-on-surface-variant border-outline-variant"
+                            : "bg-error-container text-on-error-container border-error"
+                        }`}
+                      >
+                        {st.username ? `login : ${st.username}` : "pas de login"}
+                      </span>
+                      <span
+                        className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase self-start sm:self-auto ${
+                          st.password
+                            ? "bg-surface-container text-on-surface-variant border-outline-variant"
+                            : "bg-error-container text-on-error-container border-error"
+                        }`}
+                      >
+                        {st.password
+                          ? `mot de passe : ${st.password}`
+                          : "pas de mot de passe"}
+                      </span>
+                      <span
+                        className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase self-start sm:self-auto ${status.cls}`}
+                      >
+                        {status.label}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        ) : null}
+
         {/* Non configure section */}
         <div className="flex flex-col bg-surface-container-lowest border border-outline-variant shadow-sm">
           <div className="p-space-md bg-surface-container-low border-b border-outline-variant flex items-center gap-space-sm">
@@ -434,6 +515,17 @@ export default function ClientProfilePage() {
                             {site.username
                               ? `login : ${site.username}`
                               : "pas de login"}
+                          </span>
+                          <span
+                            className={`px-space-sm py-0.5 border font-label-sm text-label-sm uppercase self-start sm:self-auto ${
+                              site.password
+                                ? "bg-surface-container text-on-surface-variant border-outline-variant"
+                                : "bg-error-container text-on-error-container border-error"
+                            }`}
+                          >
+                            {site.password
+                              ? `mot de passe : ${site.password}`
+                              : "pas de mot de passe"}
                           </span>
                           <span className="px-space-sm py-0.5 border border-warning bg-warning-container font-label-sm text-label-sm uppercase text-on-warning-container self-start sm:self-auto">
                             recherche absente
