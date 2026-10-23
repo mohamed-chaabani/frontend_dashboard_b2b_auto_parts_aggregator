@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   api,
@@ -56,6 +56,8 @@ export default function ClientProfilePage() {
 
   const [detail, setDetail] = useState<AppErrorItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
 
   const logout = () => {
@@ -87,6 +89,7 @@ export default function ClientProfilePage() {
     const t = setTimeout(() => {
       setQDeb(q);
       setPage(1);
+      setSelected(new Set());
     }, 300);
     return () => clearTimeout(t);
   }, [q]);
@@ -112,25 +115,69 @@ export default function ClientProfilePage() {
     };
   }, [id, page, kind, qDeb]);
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const pageIds = errors ? errors.map((e) => e.id) : [];
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const somePageSelected = pageIds.some((id) => selected.has(id));
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        for (const id of pageIds) next.delete(id);
+      } else {
+        for (const id of pageIds) next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = somePageSelected && !allPageSelected;
+    }
+  }, [somePageSelected, allPageSelected]);
+
+  const reloadErrors = useCallback(async () => {
+    if (!id) return;
+    const r = await api.errors({
+      clientId: id,
+      page,
+      kind,
+      q: qDeb,
+      limit: LIMIT,
+    });
+    setErrors(r.errors);
+    setTotal(r.total);
+    const pages = Math.max(1, Math.ceil(r.total / LIMIT));
+    if (page > pages) setPage(pages);
+  }, [id, page, kind, qDeb]);
+
   const remove = async (item: AppErrorItem) => {
     if (!window.confirm("Supprimer cette erreur ?")) return;
     setDeleting(true);
     setActionError(null);
     try {
       await api.deleteError(item.id);
+      setSelected((prev) => {
+        if (!prev.has(item.id)) return prev;
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
       if (detail?.id === item.id) setDetail(null);
       loadProfile();
-      const r = await api.errors({
-        clientId: id,
-        page,
-        kind,
-        q: qDeb,
-        limit: LIMIT,
-      });
-      setErrors(r.errors);
-      setTotal(r.total);
-      const pages = Math.max(1, Math.ceil(r.total / LIMIT));
-      if (page > pages) setPage(pages);
+      await reloadErrors();
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : "Suppression impossible",
@@ -138,6 +185,35 @@ export default function ClientProfilePage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const removeSelected = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!window.confirm(`Supprimer ${ids.length} erreur(s) ?`)) return;
+    setBulkDeleting(true);
+    setActionError(null);
+    const failed: string[] = [];
+    for (const eid of ids) {
+      try {
+        await api.deleteError(eid);
+      } catch {
+        failed.push(eid);
+      }
+    }
+    if (detail && ids.includes(detail.id)) setDetail(null);
+    loadProfile();
+    let errorMsg: string | null = failed.length
+      ? `Suppression impossible pour ${failed.length} erreur(s)`
+      : null;
+    try {
+      await reloadErrors();
+    } catch (err) {
+      errorMsg = err instanceof Error ? err.message : "Chargement impossible";
+    }
+    setSelected(new Set(failed));
+    setActionError(errorMsg);
+    setBulkDeleting(false);
   };
 
   const snapshots = profile
@@ -407,6 +483,7 @@ export default function ClientProfilePage() {
               onChange={(e) => {
                 setKind(e.target.value);
                 setPage(1);
+                setSelected(new Set());
               }}
               className="px-space-md py-2 border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:border-secondary focus:outline-none"
             >
@@ -435,6 +512,17 @@ export default function ClientProfilePage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-outline-variant">
+                      <th className="px-space-md py-space-sm w-10">
+                        <input
+                          ref={selectAllRef}
+                          type="checkbox"
+                          checked={allPageSelected}
+                          onChange={toggleSelectAll}
+                          disabled={pageIds.length === 0}
+                          title="Tout selectionner (page)"
+                          className="w-4 h-4 accent-secondary cursor-pointer"
+                        />
+                      </th>
                       {[
                         "Date",
                         "Type",
@@ -458,9 +546,23 @@ export default function ClientProfilePage() {
                     {errors.map((e) => (
                       <tr
                         key={e.id}
-                        className="border-b border-outline-variant hover:bg-surface-container-low/40 transition-colors cursor-pointer"
+                        className={`border-b border-outline-variant hover:bg-surface-container-low/40 transition-colors ${
+                          selected.has(e.id) ? "cursor-default" : "cursor-pointer"
+                        }`}
                         onClick={() => setDetail(e)}
                       >
+                        <td
+                          className="px-space-md py-space-sm"
+                          onClick={(ev) => ev.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected.has(e.id)}
+                            onChange={() => toggleSelect(e.id)}
+                            title="Selectionner cette erreur"
+                            className="w-4 h-4 accent-secondary cursor-pointer"
+                          />
+                        </td>
                         <td className="px-space-md py-space-sm font-code-tabular text-body-sm text-on-surface-variant tabular-nums-code whitespace-nowrap">
                           {formatDateTime(e.createdAt)}
                         </td>
@@ -505,7 +607,7 @@ export default function ClientProfilePage() {
                             <button
                               type="button"
                               title="Supprimer"
-                              disabled={deleting}
+                              disabled={deleting || bulkDeleting}
                               onClick={() => void remove(e)}
                               className="p-1 hover:bg-error-container text-on-surface-variant hover:text-error disabled:opacity-50"
                             >
@@ -526,13 +628,29 @@ export default function ClientProfilePage() {
                 {errors.map((e) => (
                   <div
                     key={e.id}
-                    className="p-space-md border-b border-outline-variant flex flex-col gap-space-sm cursor-pointer"
+                    className={`p-space-md border-b border-outline-variant flex flex-col gap-space-sm ${
+                      selected.has(e.id)
+                        ? "bg-surface-container-low/60"
+                        : "cursor-pointer"
+                    }`}
                     onClick={() => setDetail(e)}
                   >
                     <div className="flex items-center justify-between gap-space-sm">
-                      <span className="px-space-sm py-0.5 border border-error bg-error-container text-on-error-container font-label-sm text-label-sm uppercase">
-                        {KIND_LABEL[e.kind] ?? e.kind}
-                      </span>
+                      <div
+                        className="flex items-center gap-space-sm"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected.has(e.id)}
+                          onChange={() => toggleSelect(e.id)}
+                          title="Selectionner cette erreur"
+                          className="w-4 h-4 accent-secondary cursor-pointer"
+                        />
+                        <span className="px-space-sm py-0.5 border border-error bg-error-container text-on-error-container font-label-sm text-label-sm uppercase">
+                          {KIND_LABEL[e.kind] ?? e.kind}
+                        </span>
+                      </div>
                       <span className="font-code-tabular text-body-sm text-outline tabular-nums-code">
                         {formatDateTime(e.createdAt)}
                       </span>
@@ -551,7 +669,7 @@ export default function ClientProfilePage() {
                       <button
                         type="button"
                         title="Supprimer"
-                        disabled={deleting}
+                        disabled={deleting || bulkDeleting}
                         onClick={() => void remove(e)}
                         className="p-1 hover:bg-error-container text-on-surface-variant hover:text-error disabled:opacity-50"
                       >
@@ -566,12 +684,47 @@ export default function ClientProfilePage() {
             </>
           )}
 
+          {/* Bulk actions */}
+          {selected.size > 0 ? (
+            <div className="p-space-md border-t border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-space-sm">
+              <span className="font-body-sm text-body-sm text-on-surface tabular-nums-code">
+                {selected.size} erreur(s) selectionnee(s)
+              </span>
+              <div className="flex items-center gap-space-sm">
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  disabled={bulkDeleting}
+                  className="px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
+                >
+                  Effacer selection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void removeSelected()}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-space-xs px-space-md py-2 bg-error text-on-error font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    delete
+                  </span>
+                  {bulkDeleting
+                    ? "Suppression..."
+                    : `Supprimer (${selected.size})`}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {/* Pagination */}
           {errors !== null && total > LIMIT ? (
             <div className="p-space-md border-t border-outline-variant flex items-center justify-between bg-surface-container-low">
               <button
                 type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => {
+                  setPage((p) => Math.max(1, p - 1));
+                  setSelected(new Set());
+                }}
                 disabled={page <= 1}
                 className="px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
               >
@@ -582,7 +735,10 @@ export default function ClientProfilePage() {
               </span>
               <button
                 type="button"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => {
+                  setPage((p) => Math.min(totalPages, p + 1));
+                  setSelected(new Set());
+                }}
                 disabled={page >= totalPages}
                 className="px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
               >
@@ -615,7 +771,7 @@ export default function ClientProfilePage() {
                 type="button"
                 className="p-1 hover:bg-surface-container text-on-surface"
                 onClick={() => setDetail(null)}
-                disabled={deleting}
+                disabled={deleting || bulkDeleting}
               >
                 <span className="material-symbols-outlined text-[24px]">
                   close
@@ -678,7 +834,7 @@ export default function ClientProfilePage() {
               <button
                 type="button"
                 onClick={() => setDetail(null)}
-                disabled={deleting}
+                disabled={deleting || bulkDeleting}
                 className="px-space-md py-2 border border-outline-variant font-label-md text-label-md uppercase tracking-wider text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50"
               >
                 Fermer
@@ -686,7 +842,7 @@ export default function ClientProfilePage() {
               <button
                 type="button"
                 onClick={() => void remove(detail)}
-                disabled={deleting}
+                disabled={deleting || bulkDeleting}
                 className="flex items-center gap-space-xs px-space-md py-2 bg-error text-on-error font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-[16px]">
